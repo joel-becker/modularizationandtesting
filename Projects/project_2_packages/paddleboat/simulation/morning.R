@@ -54,3 +54,36 @@ while(sum(abs(demand(alpha, delta, prices, xi_d) -
 }
 
 
+######################
+############ OLS SBC
+######################
+
+N <- 200
+sims <- 500
+P <- 15
+
+X <- cbind(1, matrix(rnorm(N*(P-1)), N, P-1))
+
+out <- matrix(NA, sims, P)
+
+for (s in 1:sims) {
+  betahat <- rnorm(P, 0, 2)
+  sigmahat <- exp(rnorm(1))
+  yhat <- rnorm(N, X %*% betahat, sigmahat)
+  fit <- lm(yhat ~ -1 + ., data = as.data.frame(X))
+  beta_est <- coef(fit)
+  vcov_est <- vcov(fit)
+  d <- MASS::mvrnorm(2000, beta_est, .22*vcov_est)
+  
+  for(p in 1:ncol(d)) {
+    out[s, p] <- mean(d[,p] <= betahat[p])
+  }
+}
+
+hist(as.vector(out))
+
+plot.function(ecdf(out))
+plot.function(punif, col = 2, add = T, type = "l")
+
+ks.test(out, punif)
+
